@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Signature</title>
+    <link rel="icon" href="favicon.png">
+    <style>
+        .canvas {
+            border: 2px solid black;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-center">
+            <!-- Logo -->
+            <div class="flex items-center">
+                <img src="logo.png" alt="QuickSign Logo" class="h-8 mr-2">
+                <h1 class="text-xl font-bold">QuickSign</h1>
+            </div>
+            <!-- End Logo -->
+        </div>
+    </header>
+    <!-- End Header -->
+
+    <div class="main bg-white p-4 rounded shadow-md w-full max-w-4xl mx-4 md:mx-auto mt-4">
+        <div class="top grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div class="block">
+                <p class="text-center">Text color picker</p>
+                <input class="form-control w-full" type="color" id="colorPicker">
+            </div>
+            <div class="block">
+                <p class="text-center">Background</p>
+                <input class="form-control w-full" type="color" id="canvasColor">
+            </div>
+            <div class="block">
+                <p class="text-center">Font size</p>
+                <select class="custom-select w-full" type="select" id="fontSizePicker">
+                    <option value="1">1px</option>
+                    <option value="5">5px</option>
+                    <option value="10">10px</option>
+                    <option value="20">20px</option>
+                    <option value="30">30px</option>
+                    <option value="40">40px</option>
+                    <option value="50">50px</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- <div class="mt-4">
+            <canvas class="canvas w-full h-64 sm:h-80 md:h-96 lg:h-[28rem]" id="myCanvas"></canvas>
+        </div> -->
+
+        <canvas class="canvas w-full h-64 sm:h-80 md:h-96 lg:h-[28rem]" id="myCanvas" width="800" height="500"></canvas>
+
+
+
+        <div class="bottom flex flex-wrap justify-between mt-4">
+            <button type="button" class="btn btn-danger bg-red-500 text-white px-4 py-2 rounded mx-2 mt-2 md:mt-0" id="clearButton">Clear</button>
+            <button type="button" class="btn btn-success bg-green-500 text-white px-4 py-2 rounded mx-2 mt-2 md:mt-0" id="saveButton">Save & download</button>
+            <button type="button" class="btn btn-warning bg-yellow-500 text-white px-4 py-2 rounded mx-2 mt-2 md:mt-0" id="retrieveButton">Retrieve saved signature</button>
+        </div>
+    </div>
+
+    <script>
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        const colorPicker = document.getElementById('colorPicker');
+        const canvasColor = document.getElementById('canvasColor');
+        const canvas = document.getElementById('myCanvas');
+        const clearButton = document.getElementById('clearButton');
+        const saveButton = document.getElementById('saveButton');
+        const fontSizePicker = document.getElementById('fontSizePicker');
+        const ctx = canvas.getContext('2d');
+
+        // Set initial canvas background color
+        function setCanvasBackgroundColor(color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        setCanvasBackgroundColor('#ffffff');
+
+        colorPicker.addEventListener('change', (event) => {
+            ctx.strokeStyle = event.target.value;
+        });
+
+        canvasColor.addEventListener('change', (event) => {
+            setCanvasBackgroundColor(event.target.value);
+        });
+
+        function getMousePos(canvas, event) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            };
+        }
+
+        canvas.addEventListener('mousedown', (event) => {
+            isDrawing = true;
+            const pos = getMousePos(canvas, event);
+            lastX = pos.x;
+            lastY = pos.y;
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            if (!isDrawing) return;
+            const pos = getMousePos(canvas, event);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            lastX = pos.x;
+            lastY = pos.y;
+        });
+
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseout', () => isDrawing = false);
+
+        fontSizePicker.addEventListener('change', (event) => {
+            ctx.lineWidth = event.target.value;
+        });
+
+        clearButton.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            setCanvasBackgroundColor(canvasColor.value); // Preserve canvas color after clearing
+        });
+
+        saveButton.addEventListener('click', () => {
+            localStorage.setItem('canvasContents', canvas.toDataURL());
+            const link = document.createElement('a');
+            link.download = 'my-canvas.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        retrieveButton.addEventListener('click', () => {
+            const savedCanvas = localStorage.getItem('canvasContents');
+            if (savedCanvas) {
+                const img = new Image();
+                img.src = savedCanvas;
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        });
+    </script>
+</body>
+
+</html>
